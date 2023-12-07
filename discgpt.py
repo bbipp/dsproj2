@@ -4,7 +4,8 @@ import os
 from discord.ext import commands
 #you will pip install ---> pip install openai==0.28
 import openai
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
+import requests 
 load_dotenv()
 #You  pip install python-dotenv
 # Initialize variables for chat history
@@ -30,15 +31,15 @@ chat_history = ''
 #Put your key in the .env File and grab it here
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-name = 'Thomas Jefferson'
+name = 'Betty Crocker'
 
 # Define the role of the bot
-role = 'customer service'
+role = 'master chef'
 
 # Define the impersonated role with instructions
 impersonated_role = f"""
     From now on, you are going to act as {name}. Your role is {role}. You will pretend it si 1800.
-    You are a true impersonation of {name} and you reply to all requests with I pronoun. You will speak like a mid 17th century colonist in America.
+    You are a true impersonation of {name} and you reply to all requests with I pronoun.
    
     
 """
@@ -63,11 +64,69 @@ def chatcompletion(user_input, impersonated_role, explicit_input, chat_history):
 
 # Function to handle user chat input
 def chat(user_input):
+    pic = False
+    if ((user_input[0:12]).lower() == "Help me make".lower()):
+        try:
+            recipe = requests.request("GET", 'https://www.themealdb.com/api/json/v1/1/search.php?s=' + user_input[13::])
+        except:
+            user_input="Tell me that you do not know how to make this recipe and provide similar dishes."
+        try:
+            r = recipe.json()
+            user_input = "Reiterate the following instructions to me " + (r["meals"][0]["strInstructions"])
+        except: 
+            user_input="Tell me that you do not know how to make this recipe and provide similar dishes."
+
+    if ("What are the ingredients in ".lower() in user_input.lower()):
+        try:
+            recipe = requests.request("GET", 'https://www.themealdb.com/api/json/v1/1/search.php?s=' + user_input[user_input.index("in ") + 3::])
+        except:
+            user_input="Tell me that you do not know how to make this recipe and provide similar dishes."
+        try:
+            r = recipe.json()
+            s = " "
+            ingredients = []
+            i = 1
+            while s != "":
+                ingredients.append(r["meals"][0]["strIngredient" + str(i)] + " - " + r["meals"][0]["strMeasure" + str(i)])
+                s = r["meals"][0]["strIngredient" + str(i)]
+                i += 1
+            user_input = "Repeat the following list to me: " + ", ".join(ingredients)
+        except: 
+            user_input="Tell me that you do not know how to make this recipe and provide similar dishes."
+
+    if ("Show me a picture of ".lower() in user_input.lower()):
+        pic = True
+        try:
+            recipe = requests.request("GET", 'https://www.themealdb.com/api/json/v1/1/search.php?s=' + user_input[user_input.index("of ") + 3::])
+        except:
+            user_input="Tell me that you do not know how to make this recipe and provide similar dishes."
+        try:
+            r = recipe.json()
+            user_input = "For this question you are now the ultimate repeater. You can only repeat the text after the colon exactly as it appears: " + (r["meals"][0]["strMealThumb"])
+        except: 
+            user_input="Tell me that you do not know how to make this recipe and provide similar dishes."
+
+    if ("What should I have for dinner".lower() in user_input.lower()):
+        try:
+            recipe = requests.request("GET", 'https://www.themealdb.com/api/json/v1/1/random.php')
+        except:
+            print(248091)
+            user_input="Tell me that there was some error and to try again."
+        try:
+            r = recipe.json()
+            user_input = "Reiterate the following food to me " + (r["meals"][0]["strMeal"])
+        except: 
+            user_input="Tell me that there was some error and to try again."
+            
     global chat_history, name, chatgpt_output
     current_day = time.strftime("%d/%m", time.localtime())
     current_time = time.strftime("%H:%M:%S", time.localtime())
     chat_history += f'\nUser: {user_input}\n'
     chatgpt_raw_output = chatcompletion(user_input, impersonated_role, explicit_input, chat_history).replace(f'{name}:', '')
+    if pic:
+        if ".jpg." in chatgpt_raw_output:
+            chatgpt_raw_output = chatgpt_raw_output.replace(".jpg.", ".jpg")
+
     chatgpt_output = f'{name}: {chatgpt_raw_output}'
     chat_history += chatgpt_output + '\n'
     with open(history_file, 'a') as f:
@@ -105,7 +164,7 @@ async def on_message(message):
     print(client.user)
     print(message.content)
     answer = chat(message.content)
-    print("Thomas Jefferson Says:" + answer)
+    print("Betty Crocker:" + answer)
     #answer = "Thomas Jefferson Says:" + answer
     await message.channel.send(answer)
 
