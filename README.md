@@ -12,4 +12,4 @@
   - Show me a picture of _______
   - What should I have for dinner
     
--This data is taken from www.themealdb.com/api through calls that use the blank as a parameter
+-This data is taken from www.themealdb.com through calls that use the blank as a parameter
