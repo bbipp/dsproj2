@@ -6,7 +6,8 @@
 
 # Part 2
 -The integrated bot is Betty Crocker
--Resonds to the following commands:
+
+-Resonds to the following commands when the blank is filled by a food:
   - Help me make ______
   - What are the ingredients in ______
   - Show me a picture of _______
